@@ -1,0 +1,101 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: private-repository-k8s
+  labels:
+    app: private-repository-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: private-repository-k8s
+  template:
+    metadata:
+      labels:
+        app: private-repository-k8s
+    spec:
+      volumes:
+      - name: certs-vol
+        persistentVolumeClaim:
+          claimName: cert-claim
+      - name: registry-vol
+        persistentVolumeClaim:
+          claimName: registry-claim
+      containers:
+        - image: registry:latest
+          name: private-repository-k8s
+          imagePullPolicy: IfNotPresent
+          env:
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: /certs/registry.crt
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: /certs/registry.key
+          ports:
+            - containerPort: 5000
+          volumeMounts:
+          - name: certs-vol
+            mountPath: /certs
+          - name: registry-vol
+            mountPath: /var/lib/registry
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-cert
+  labels:
+    pv: cert
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: slow
+  hostPath:
+    path: /opt/certs
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: cert-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 1Gi
+  storageClassName: slow
+  selector:
+    matchLabels:
+      pv: cert
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-registry
+  labels:
+    pv: registry
+spec:
+  capacity:
+    storage: 10Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Recycle
+  storageClassName: slow
+  hostPath:
+    path: /reg-vol
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: registry-claim
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 9Gi
+  storageClassName: slow
+  selector:
+    matchLabels:
+      pv: registry

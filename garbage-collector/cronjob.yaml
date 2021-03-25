@@ -1,0 +1,29 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: garb-coll
+spec:
+  schedule: "*/1 * * * *"
+  concurrencyPolicy: "Forbid"
+  failedJobsHistoryLimit: 10
+  startingDeadlineSeconds: 600 # 10 min
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 3300 # 55min
+      template:
+        spec:
+          containers:
+            - name: collect
+              image: python:3.6-slim
+              command: ["python"]
+              args: ["/tmp/docker_registry_garbage_collector.py"]
+              volumeMounts:
+              - mountPath: /tmp
+                name: job
+          volumes:
+          - name: job
+            hostPath:
+              path: /job
+          restartPolicy: Never
+

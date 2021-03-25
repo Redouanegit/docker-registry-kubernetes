@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: docker-registry
+  name: registry-pvc
+spec:
+  accessModes:
+    - ReadWriteMany
+  volumeMode: Filesystem
+  resources:
+    requests:
+      storage: 9Gi
+  storageClassName: slow
+  selector:
+    matchLabels:
+      pv: reg
